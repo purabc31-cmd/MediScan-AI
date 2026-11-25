@@ -165,8 +165,13 @@ def build_pdf(payload):
 
 
 def is_loopback_request():
-    """Permit unauthenticated upload/report routes only from the same machine."""
-    return request.remote_addr in {"127.0.0.1", "::1"}
+    """Require both a loopback client and a loopback Host header."""
+    host = request.host or ""
+    if host.startswith("[") and "]" in host:
+        hostname = host[1:host.index("]")]
+    else:
+        hostname = host.split(":", 1)[0]
+    return request.remote_addr in {"127.0.0.1", "::1"} and hostname.lower() in {"localhost", "127.0.0.1", "::1"}
 
 
 def local_development_guard():
@@ -186,6 +191,11 @@ def home():
 @app.get("/assets/<path:filename>")
 def frontend_assets(filename):
     return send_from_directory(FRONTEND_DIR / "assets", filename)
+
+
+@app.get("/docs/ARCHITECTURE_AND_ROADMAP.md")
+def architecture_roadmap():
+    return send_from_directory(Path(__file__).resolve().parent / "docs", "ARCHITECTURE_AND_ROADMAP.md")
 
 
 @app.get("/capabilities")
