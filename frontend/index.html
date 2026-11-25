@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#FFFEEC">
+  <meta name="description" content="MediScan AI is a medical imaging research prototype for responsible, model-supported image analysis.">
+  <title>MediScan AI — Medical Imaging Research</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#home" aria-label="MediScan AI home">
+      <span class="brand-mark" aria-hidden="true">M</span>
+      <span>MediScan <em>AI</em></span>
+    </a>
+    <nav class="main-nav" aria-label="Main navigation">
+      <a href="#workspace">Workspace</a>
+      <a href="#how-it-works">How it works</a>
+      <a href="#about">About</a>
+    </nav>
+    <a class="header-cta" href="#workspace">Open workspace <span aria-hidden="true">↗</span></a>
+  </header>
+
+  <main>
+    <section class="hero section-wrap" id="home">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="status-dot"></span> MEDICAL IMAGING RESEARCH PLATFORM</div>
+        <h1>A clearer view of<br><span>medical imaging.</span></h1>
+        <p class="hero-lede">Explore an AI-assisted imaging workflow built to make research outputs easier to review, understand and question.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#workspace">Start an analysis <span aria-hidden="true">→</span></a>
+          <a class="text-link" href="#how-it-works">Explore the workflow <span aria-hidden="true">↓</span></a>
+        </div>
+        <div class="hero-footnote"><span class="shield-icon" aria-hidden="true">✳</span> Research support only. Not a diagnosis or a substitute for a radiologist.</div>
+      </div>
+      <div class="hero-art" aria-label="Abstract illustration of a medical scan">
+        <div class="art-ring ring-one"></div>
+        <div class="art-ring ring-two"></div>
+        <div class="scan-card">
+          <div class="scan-topline"><span>IMAGE STUDY</span><span class="scan-live">● PREVIEW</span></div>
+          <div class="scan-placeholder">
+            <div class="scan-ellipse"><div class="scan-inner"></div><div class="scan-cross"></div></div>
+            <span class="scan-axis axis-top">A</span><span class="scan-axis axis-bottom">P</span>
+            <span class="scan-axis axis-left">R</span><span class="scan-axis axis-right">L</span>
+          </div>
+          <div class="scan-bottom"><span>Research visualization</span><span>2D · SAMPLE GRAPHIC</span></div>
+        </div>
+        <div class="floating-note"><span class="note-icon">⌁</span><span><strong>Human review first</strong><small>AI output needs expert context</small></span></div>
+        <div class="hero-stamp">MS<span>·</span>01</div>
+      </div>
+    </section>
+
+    <section class="trust-strip" aria-label="Platform principles">
+      <div><span class="trust-number">01</span><span><strong>Transparent outputs</strong><small>Model and data limitations shown</small></span></div>
+      <div><span class="trust-number">02</span><span><strong>Modality-aware</strong><small>Separate workflows by scan type</small></span></div>
+      <div><span class="trust-number">03</span><span><strong>Privacy-conscious</strong><small>Local development upload controls</small></span></div>
+    </section>
+
+    <section class="workspace section-wrap" id="workspace">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">THE WORKSPACE</div>
+          <h2>Start with a scan.</h2>
+          <p>Choose the imaging modality, add a file and review the capabilities currently configured on this server.</p>
+        </div>
+        <div class="service-pill" id="service-status"><span class="status-dot muted"></span><span>Checking service…</span></div>
+      </div>
+
+      <div class="workspace-grid">
+        <div class="upload-panel panel">
+          <div class="panel-heading"><div><span class="step-label">STEP 01</span><h3>Study details</h3></div><span class="panel-icon">⌗</span></div>
+          <label class="field-label" for="modality">Imaging modality</label>
+          <div class="modality-options" role="group" aria-label="Select imaging modality">
+            <button class="modality-option active" data-modality="MRI" type="button"><span class="modality-symbol">◉</span><strong>MRI</strong><small id="mri-status">Checking</small></button>
+            <button class="modality-option" data-modality="CT" type="button"><span class="modality-symbol">◎</span><strong>CT scan</strong><small id="ct-status">Not active</small></button>
+            <button class="modality-option" data-modality="X-ray" type="button"><span class="modality-symbol">⌁</span><strong>X-ray</strong><small id="xray-status">Not active</small></button>
+          </div>
+          <label class="field-label upload-label" for="scan-file">Upload image</label>
+          <input id="scan-file" type="file" accept=".png,.jpg,.jpeg,.dcm,image/png,image/jpeg,application/dicom" hidden>
+          <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Choose or drop a scan image">
+            <div class="upload-glyph">↑</div>
+            <strong>Drop your scan here</strong>
+            <span>or <u>browse files</u> from your device</span>
+            <small>PNG, JPG, JPEG or single-slice DICOM · max 15 MB</small>
+          </div>
+          <div class="file-preview" id="file-preview" hidden>
+            <div class="file-thumb" id="file-thumb"><span>IMG</span></div>
+            <div class="file-meta"><strong id="file-name">scan.png</strong><small id="file-size">0 MB</small></div>
+            <button class="icon-button" id="remove-file" type="button" aria-label="Remove selected file">×</button>
+          </div>
+          <div class="upload-warning"><span>i</span><p>Do not upload identifiable patient information. Use only de-identified material you are authorised to process.</p></div>
+          <button class="button button-primary analyze-button" id="analyze-button" type="button" disabled>Analyse scan <span aria-hidden="true">→</span></button>
+          <p class="action-hint" id="action-hint">Select an image to continue.</p>
+        </div>
+
+        <div class="viewer-panel panel">
+          <div class="panel-heading viewer-heading"><div><span class="step-label">IMAGE VIEWER</span><h3>Scan preview</h3></div><span class="viewer-badge">LOCAL PREVIEW</span></div>
+          <div class="viewer-canvas" id="viewer-canvas">
+            <div class="viewer-empty" id="viewer-empty"><div class="empty-scan-icon">⌗</div><strong>Your image will appear here</strong><span>Upload a file to preview it before analysis.</span></div>
+            <img id="scan-preview" alt="Selected medical scan preview" hidden>
+            <div class="dicom-placeholder" id="dicom-placeholder" hidden><span>DICOM</span><strong>File selected</strong><small>Browser preview is unavailable for this DICOM file. The local service can decode one slice.</small></div>
+            <div class="viewer-corner corner-tl">PREVIEW</div><div class="viewer-corner corner-br">MEDISCAN AI</div>
+          </div>
+          <div class="viewer-tools">
+            <div class="tool-row">
+              <label for="zoom-control">Zoom <output id="zoom-value">100%</output></label>
+              <input id="zoom-control" type="range" min="50" max="200" step="10" value="100">
+            </div>
+            <div class="tool-row dual-tools">
+              <label for="brightness-control">Brightness <output id="brightness-value">100%</output><input id="brightness-control" type="range" min="50" max="150" value="100"></label>
+              <label for="contrast-control">Contrast <output id="contrast-value">100%</output><input id="contrast-control" type="range" min="50" max="150" value="100"></label>
+            </div>
+            <div class="viewer-actions"><button class="small-action" id="rotate-button" type="button" disabled>↻ Rotate</button><button class="small-action" id="reset-view-button" type="button" disabled>Reset view</button></div>
+          </div>
+        </div>
+      </div>
+
+      <section class="results-section panel" id="results-section" hidden>
+        <div class="panel-heading"><div><span class="step-label">ANALYSIS OUTPUT</span><h3>Research result</h3></div><span class="result-status" id="result-status">COMPLETED</span></div>
+        <div id="analysis-message" class="analysis-message" role="status"></div>
+        <div class="result-grid" id="result-grid" hidden>
+          <div class="result-metric"><span>MODEL-PREDICTED CLASS</span><strong id="predicted-class">—</strong><small>Dataset label, not a confirmed finding</small></div>
+          <div class="result-metric"><span>RAW MODEL SCORE</span><strong id="model-score">—</strong><small>Uncalibrated; not a clinical probability</small></div>
+          <div class="result-metric"><span>MODEL VERSION</span><strong id="model-version">—</strong><small>Check model and dataset provenance</small></div>
+        </div>
+        <div class="overlay-grid" id="overlay-grid" hidden>
+          <figure id="gradcam-figure" hidden><img id="gradcam-image" alt="Grad-CAM model attention visualisation"><figcaption>Grad-CAM visualisation — exploratory only; does not localise or confirm a lesion.</figcaption></figure>
+          <figure id="segmentation-figure" hidden><img id="segmentation-image" alt="Model-generated segmentation output"><figcaption>Model segmentation output — only meaningful after validation against reference masks.</figcaption></figure>
+        </div>
+        <div class="limitation-box"><strong>Interpretation limits</strong><ul id="limitations-list"><li>Research prototype output requires qualified review.</li></ul></div>
+        <button class="button button-secondary" id="download-report" type="button">Download research PDF <span aria-hidden="true">↓</span></button>
+      </section>
+    </section>
+
+    <section class="how-section" id="how-it-works">
+      <div class="section-wrap">
+        <div class="section-heading">
+          <div><div class="eyebrow">A RESPONSIBLE WORKFLOW</div><h2>Built around transparency.</h2><p>Each stage makes a clear distinction between what is configured, what the model outputs and what still needs expert evaluation.</p></div>
+        </div>
+        <div class="steps-grid">
+          <article class="step-card"><span>01 / INGEST</span><div class="step-art art-upload">↑</div><h3>Prepare the study</h3><p>Choose the modality and submit an allowed, de-identified image. Complete multi-slice study handling is a separate capability.</p></article>
+          <article class="step-card"><span>02 / INFER</span><div class="step-art art-infer">⌘</div><h3>Run a configured model</h3><p>Only a compatible model with installed weights can produce an output. Unsupported modalities remain unavailable.</p></article>
+          <article class="step-card"><span>03 / REVIEW</span><div class="step-art art-review">↗</div><h3>Review with context</h3><p>See model labels, versions and limitations. A qualified radiologist must interpret imaging in clinical context.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="about-section section-wrap" id="about">
+      <div class="about-copy"><div class="eyebrow">ABOUT THE PROJECT</div><h2>Useful research.<br><span>Honest boundaries.</span></h2></div>
+      <div class="about-detail"><p>MediScan AI is a modular medical imaging research prototype. The current Python service includes a 2D MRI classification workflow, optional binary segmentation, Grad-CAM visualisation and PDF research output. It does not currently provide CT or X-ray inference, complete 3D study analysis or clinically validated findings.</p><a class="text-link" href="/docs/ARCHITECTURE_AND_ROADMAP.md" target="_blank" rel="noopener">Read the architecture roadmap ↗</a></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <a class="brand footer-brand" href="#home"><span class="brand-mark">M</span><span>MediScan <em>AI</em></span></a>
+    <p>Medical imaging research prototype · Not for diagnosis or treatment decisions.</p>
+    <span>© <span id="year"></span> MediScan AI</span>
+  </footer>
+  <script src="/assets/app.js" defer></script>
+</body>
+</html>
