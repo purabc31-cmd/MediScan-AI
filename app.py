@@ -11,7 +11,7 @@ import requests
 import torch
 import torch.nn.functional as F
 from dotenv import load_dotenv
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file, send_from_directory
 from PIL import Image
 from torchvision import transforms
 from reportlab.lib import colors
@@ -32,6 +32,8 @@ DEVICE_NAME = os.getenv("DEVICE", "auto")
 DEVICE = torch.device("cuda" if torch.cuda.is_available() and DEVICE_NAME != "cpu" else "cpu")
 TOKEN = os.getenv("MEDISCAN_SERVICE_TOKEN", "")
 WEIGHTS = Path("weights")
+FRONTEND_DIR = Path(__file__).resolve().parent / "frontend"
+LOCAL_UPLOAD_ENABLED = os.getenv("LOCAL_UPLOAD_ENABLED", "false").lower() == "true"
 CLASS_NAMES = ["glioma", "meningioma", "pituitary", "no_tumor"]
 _classifier = None
 _segmenter = None
@@ -159,6 +161,146 @@ def build_pdf(payload):
     ])
     doc.build(story)
     return buffer.getvalue()
+
+
+
+def is_loopback_request():
+    """Permit unauthenticated upload/report routes only from the same machine."""
+    return request.remote_addr in {"127.0.0.1", "::1"}
+
+
+def local_development_guard():
+    if not LOCAL_UPLOAD_ENABLED or not is_loopback_request():
+        return jsonify({
+            "error": "local_development_route_disabled",
+            "message": "Local upload is disabled. Enable LOCAL_UPLOAD_ENABLED only for localhost development; use an authenticated private backend for deployment."
+        }), 403
+    return None
+
+
+@app.get("/")
+def home():
+    return send_from_directory(FRONTEND_DIR, "index.html")
+
+
+@app.get("/assets/<path:filename>")
+def frontend_assets(filename):
+    return send_from_directory(FRONTEND_DIR / "assets", filename)
+
+
+@app.get("/capabilities")
+def capabilities():
+    return jsonify({
+        "service": "MediScan AI",
+        "local_upload_enabled": LOCAL_UPLOAD_ENABLED and is_loopback_request(),
+        "modalities": {
+            "MRI": {
+                "status": "available" if (WEIGHTS / "mri_classifier.pth").exists() else "model_required",
+                "input_scope": "single 2D image or DICOM slice",
+                "segmentation": (WEIGHTS / "mri_unet.pth").exists()
+            },
+            "CT": {"status": "not_implemented"},
+            "X-ray": {"status": "not_implemented"}
+        },
+        "clinical_validation": "not_established"
+    })
+
+
+@app.post("/predict/mri/upload")
+def predict_mri_upload():
+    guard = local_development_guard()
+    if guard:
+        return guard
+    if not (WEIGHTS / "mri_classifier.pth").exists():
+        return jsonify({
+            "error": "mri_classifier_weights_missing",
+            "message": "MRI model weights are not installed. Train and evaluate a compatible model before running analysis."
+        }), 503
+    uploaded = request.files.get("file")
+    if uploaded is None or not uploaded.filename:
+        return jsonify({"error": "file_required"}), 400
+    filename = uploaded.filename
+    suffix = Path(filename).suffix.lower()
+    if suffix not in {".png", ".jpg", ".jpeg", ".dcm"}:
+        return jsonify({"error": "unsupported_file_type", "message": "Upload PNG, JPG, JPEG or a single-slice DICOM file."}), 415
+    raw = uploaded.read()
+    if not raw:
+        return jsonify({"error": "empty_file"}), 400
+    try:
+        image = decode_medical_image(raw, filename)
+        tensor = make_classifier_tensor(image)
+        classifier = load_classifier()
+        if classifier is None:
+            return jsonify({"error": "mri_classifier_weights_missing"}), 503
+        logits = classifier(tensor)
+        probabilities = torch.softmax(logits, dim=1)[0]
+        index = int(torch.argmax(probabilities).item())
+        classification = {
+            "predicted_class": CLASS_NAMES[index],
+            "confidence": float(probabilities[index].item()),
+            "probabilities": {CLASS_NAMES[i]: float(probabilities[i].item()) for i in range(len(CLASS_NAMES))}
+        }
+        gradcam_png = None
+        try:
+            gradcam = GradCAM(classifier, classifier.layer4[-1])
+            try:
+                cam = gradcam(tensor, index)
+            finally:
+                gradcam.close()
+            gradcam_png = png_base64(gradcam_overlay(image, cam))
+        except Exception:
+            app.logger.exception("Grad-CAM visualisation unavailable")
+        segmentation_png = None
+        segmenter = load_segmenter()
+        if segmenter is not None:
+            with torch.no_grad():
+                mask = torch.sigmoid(segmenter(make_segmentation_tensor(image)))[0, 0].cpu().numpy()
+            segmentation_png = png_base64(segmentation_overlay(image, mask))
+        return jsonify({
+            "status": "completed",
+            "modality": "MRI",
+            "classification": classification,
+            "gradcam_png_base64": gradcam_png,
+            "segmentation_png_base64": segmentation_png,
+            "model_versions": {
+                "classifier": "resnet50-mri-v1",
+                "segmentation": "unet2d-mri-v1" if segmenter is not None else None
+            },
+            "metrics": None,
+            "limitations": [
+                "Research prototype; not clinically validated.",
+                "The displayed score is an uncalibrated model score, not a clinical probability.",
+                "Only one 2D image or DICOM slice is analysed; complete MRI volumes are not supported.",
+                "The predicted class depends on the dataset labels used to train the local model.",
+                "Grad-CAM is an exploratory model explanation and does not establish lesion location."
+            ]
+        })
+    except (ValueError, OSError) as error:
+        return jsonify({"error": "invalid_scan", "message": str(error)}), 400
+    except Exception:
+        app.logger.exception("Local MRI inference failed")
+        return jsonify({"error": "mri_inference_failed", "message": "The image could not be processed by the configured research model."}), 500
+
+
+@app.post("/reports/generate/local")
+def generate_local_report():
+    guard = local_development_guard()
+    if guard:
+        return guard
+    payload = request.get_json(silent=True) or {}
+    if not payload.get("classification"):
+        return jsonify({"error": "classification_required"}), 400
+    try:
+        pdf_bytes = build_pdf(payload)
+        return send_file(
+            BytesIO(pdf_bytes),
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name="MediScan-AI-research-report.pdf"
+        )
+    except Exception:
+        app.logger.exception("Local PDF report generation failed")
+        return jsonify({"error": "pdf_generation_failed"}), 500
 
 
 @app.get("/health")
