@@ -1,4 +1,32 @@
-# MediScan AI — Python inference and training service
+# MediScan AI — Medical Imaging Research Prototype
+
+MediScan AI is a research prototype with a responsive web workspace and a Python inference service. It is **not clinically validated and must not be used for diagnosis or treatment decisions**.
+
+## Current web interface
+
+Run the Flask service and open `http://127.0.0.1:5000` to use the olive/cream responsive interface. It provides:
+- Modality selection and capability status for MRI, CT and X-ray.
+- Drag-and-drop file selection and local image preview.
+- Zoom, rotation, brightness and contrast controls.
+- MRI research inference when compatible trained weights are installed.
+- Optional display of model-produced Grad-CAM/segmentation outputs.
+- Local PDF research report download.
+
+The interface intentionally marks CT and X-ray as not implemented. MRI inference currently supports one 2D image or single DICOM slice, not a complete 3D MRI study. The local upload route is disabled by default.
+
+### Enable local upload for localhost development only
+
+1. Copy `.env.example` to `.env`.
+2. Set `LOCAL_UPLOAD_ENABLED=true`.
+3. Keep the Flask development server bound to `127.0.0.1` and open it from the same computer at `http://127.0.0.1:5000` or `http://localhost:5000`.
+4. Do not expose this development server to a LAN, public network, reverse proxy or the internet. The local upload/report routes require a loopback client and loopback Host header.
+5. For deployment, leave `LOCAL_UPLOAD_ENABLED=false` and integrate an authenticated private backend. Do not expose the model service token to browser JavaScript.
+
+The upload UI accepts PNG, JPG, JPEG and a single-slice DICOM file up to the configured request limit. A compatible `weights/mri_classifier.pth` is required for MRI inference; optional `weights/mri_unet.pth` enables the binary segmentation output. Scores are raw model outputs, not calibrated clinical probabilities.
+
+See [the architecture and development roadmap](docs/ARCHITECTURE_AND_ROADMAP.md) for the full implementation status, planned phases and safety gates.
+
+---
 
 This is the Python AI engine for the MediScan AI research prototype. It is designed to connect to the Hatchable backend created for the project.
 
